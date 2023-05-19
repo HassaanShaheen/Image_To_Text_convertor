@@ -1,7 +1,8 @@
-import 'dart:io';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class Image_to_text extends StatefulWidget {
   const Image_to_text({Key? key}) : super(key: key);
@@ -11,54 +12,48 @@ class Image_to_text extends StatefulWidget {
 }
 
 class _Image_to_textState extends State<Image_to_text> {
+  String result = "";
+  File? image;
+  late Future<File> imageFile;
+  ImagePicker? imagePicker;
 
-  String result ="";
-   File ?image;
-   late Future<File> imageFile;
-   ImagePicker? imagePicker;
-
-   PerformImageLabelling()async
-   {
-     final FirebaseVisionImage firebaseVisionImage =FirebaseVisionImage.fromFile(image);
-     final TextRecognizer recognizer = FirebaseVision.instance.textRecognizer();
-     VisionText visionText = await recognizer.processImage(firebaseVisionImage);
-     result="";
-     setState(() {
-       for(TextBlock block in visionText.blocks)
-         {
-           final String txt = block.text;
-           for(TextLine line in block.lines)
-             {
-               for(TextElement element in line.elements)
-                 {
-                   result +="${element.text} ";
-                 }
-             }
-           result += "\n\n";
-         }
-     });
-   }
-
-  pickImageFromGallary()async
+  performImageLabelling()async
   {
-    PickedFile? pickedFile= await imagePicker?.getImage(source: ImageSource.gallery);
-    image =File(pickedFile!.path);
+    final FirebaseVisionImage firebaseVisionImage =FirebaseVisionImage.fromFile(image);
+    final TextRecognizer recognizer = FirebaseVision.instance.textRecognizer();
+    VisionText visionText = await recognizer.processImage(firebaseVisionImage);
+    result="";
+    setState(() {
+      for(TextBlock block in visionText.blocks)
+      {
+        // final String txt = block.text;
+        for(TextLine line in block.lines)
+        {
+          result +="${line.text}\n";
+          // for(TextElement element in line.elements)
+          // {
+          //   result +="${element.text} ";
+          // }
+        }
+        // result += "\n\n";
+      }
+    });
+  }
+  pickImageFromGallary() async {
+    XFile? pickedFile =await imagePicker?.pickImage(source: ImageSource.gallery);
+    image = File(pickedFile!.path);
     setState(() {
       image;
-
-      PerformImageLabelling();
+      performImageLabelling();
     });
   }
 
-
-  captureImageWithCamera()async
-  {
-    PickedFile? pickedFile= await imagePicker?.getImage(source: ImageSource.camera);
-    image =File(pickedFile!.path);
+  captureImageWithCamera() async {
+    XFile? pickedFile =await imagePicker?.pickImage(source: ImageSource.camera);
+    image = File(pickedFile!.path);
     setState(() {
       image;
-
-      PerformImageLabelling();
+      performImageLabelling();
     });
   }
 
@@ -72,130 +67,112 @@ class _Image_to_textState extends State<Image_to_text> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/pic.jpg'),
-              fit: BoxFit.cover,
-            )
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text('Image To Text Converter'),
+          centerTitle: true,
+          leading: const Icon(
+            Icons.home,
+            color: Colors.white,
+            size: 30,
+          ),
+          actions: [
+            IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.info,
+                  color: Colors.white,
+                  size: 27,
+                ))
+          ],
+          backgroundColor: Colors.teal.shade800,
         ),
-        child: Column(
-          children: [
-            const SizedBox(width: 100,),
-            Container(
-              height: 280,
-              width: 380,
-              margin: const EdgeInsets.only(top: 50),
-              padding: const EdgeInsets.only(left: 8, bottom: 5, right: 18),
-              decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/book.jpeg'),
-                  )
+        bottomNavigationBar: CurvedNavigationBar(
+            animationDuration: const Duration(milliseconds: 300),
+            backgroundColor: Colors.white,
+            color: Colors.teal.shade800,
+            index: 1,
+            onTap: (index) {
+              if (index == 0) {
+                pickImageFromGallary();
+              } else if (index == 2) {
+                captureImageWithCamera();
+              }
+            },
+            items: const [
+              Icon(
+                Icons.image,
+                size: 35,
+                color: Colors.white,
               ),
-              child:  SingleChildScrollView(
-                child: Padding(padding: const EdgeInsets.all(12.0),
-                  child:Text(
-                    result,
-                    style: const TextStyle(
-                      fontSize:16.0,
-                    ),
-                    textAlign: TextAlign.justify,
-                  )
+              Icon(
+                Icons.home,
+                size: 35,
+                color: Colors.white,
+              ),
+              Icon(
+                Icons.camera_alt,
+                size: 35,
+                color: Colors.white,
+              )
+            ]),
+        body: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.2,
+              ),
+            ),
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                padding: const EdgeInsets.only(top: 30),
+                width: double.infinity,
+                height: double.infinity,
+                decoration: const BoxDecoration(
+                    image: DecorationImage(
+                        image: AssetImage('assets/home.png'))),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Container(
+                        child: image != null
+                            ? Image.file(
+                          image!,
+                          fit: BoxFit.cover,
+                        )
+                            : const SizedBox(),
+                      ),
+                    )
+                  ],
                 ),
               ),
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
+                  width: 115,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.teal.shade800,
+                  ),
                   child: TextButton(
-                    onPressed: (){},
-                    child: const SizedBox(
-                      width: 45.0,
-                      height: 30.0,
-                      child: Icon(
-                        Icons.cut,
-                        size: 30.0,
-                        color: Colors.blueGrey,
-                      ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, 'translation',arguments: result);
+                    },
+                    child: const Text(
+                      "Convert",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-                Container(
-                  child: TextButton(
-                    onPressed: (){},
-                    child: const SizedBox(
-                      width: 45.0,
-                      height: 30.0,
-                      child: Icon(
-                        Icons.copy,
-                        size: 30.0,
-                        color: Colors.blueGrey,
-                      ),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: (){},
-                  child: const SizedBox(
-                    width: 45.0,
-                    height: 30.0,
-                    child: Icon(
-                      Icons.paste,
-                      size: 30.0,
-                      color: Colors.blueGrey,
-                    ),
-                  ),
-                )
               ],
             ),
-            Container(
-              margin: const EdgeInsets.only(top: 20, right: 140),
-              child: Stack(
-                children: [
-                  Stack(
-                    children: [
-                      Center(
-                        child: Image.asset('assets/clipboard.jpeg',
-                          height: 240,
-                          width: 240,
-                        ),
-                      )
-                    ],
-                  ),
-                  Center(
-                    child:TextButton(
-                      onPressed: ()
-                      {
-                        pickImageFromGallary();
-                      },
-                      onLongPress: ()
-                        {
-                          captureImageWithCamera();
-                        },
-                      child: Container(
-                        margin: const EdgeInsets.only(top: 25),
-                        child: image!=null
-                          ? Image.file(image! , width: 140, height: 140, fit: BoxFit.cover)
-                            :const SizedBox(
-                          width: 250,
-                          height: 200,
-                          child: Icon(
-                            Icons.camera_front,
-                            size: 100,
-                            color: Colors.blueGrey,
-                          ),
-                        )
-                      ),
-                    )
-                  ),
-                ],
-              ),
-
-            )
           ],
-        ),
-        ),
-      );
+        )
+    );
   }
 }
